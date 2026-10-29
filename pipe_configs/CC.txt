@@ -1,0 +1,134 @@
+# LHWR / IST copper coil (Rossi, 2023).
+# Dataset: Experimental_data_CC/.
+
+[pipe]
+name = CC
+description = Copper coil (CC), IST/LHWR
+material = copper
+
+[geometry]
+L = 104.191                     # pipe length PAV -> HPV (m), lab survey
+                                # 2026-09-17 (was 105.0, as built).
+                                # Old note, computed with the previous geometry
+                                # (L = 105, PT2 at 50 m): the length implied by
+                                # the measured period and a_transducer was 105.7
+                                # and 106.6 m on the MAN 150/250 runs (109.2 on
+                                # AUT 150; AUT 250 gave 102.9).
+D = 0.020                       # internal diameter (m)
+# celerity omitted on purpose: computed from [material] below (Korteweg).
+# To pin a measured value instead, add here:  celerity = <m/s>
+
+[material]                      # used ONLY when [geometry] celerity is absent
+e = 0.001                       # wall thickness (m)
+E = 1.20e11                     # Young's modulus (Pa), copper. O mesmo da CS:
+                                # e uma propriedade do material, nao da forma,
+                                # e o 1.19e11 herdado so reproduzia a celeridade
+                                # que vinha declarada no trabalho anterior.
+alpha = 0.976                   # pipe-restraint coefficient (-)
+                                # -> a = 1270.731 m/s (theoretical). NOTE: the
+                                # celerity measured on this coil is ~1070 m/s;
+                                # the fittings and coiling add compliance the
+                                # Korteweg formula does not capture, which is
+                                # why M1/M2 locate well here and Theoretical
+                                # and M3_Joukowsky do not.
+
+# position of each sensor from the PAV (m); the FIRST entry is the reference (PT1)
+# Lab survey 2026-09-17, distances from the PAV (positive towards the HPV):
+#   MV (manual valve)  -0.790    flowmeter   -0.410    PAV    0.000
+#   PT1                 0.210    air relief   0.365    PT2   51.959
+#   LOC1               65.512    PT3        103.711    HPV  104.191
+# The MV sits on the far side of the PAV, so on MAN tests the closed end is
+# 0.790 m farther from the HPV than on AUT tests (104.981 vs 104.191 m). Both
+# valves are on the PAV side of PT1, so the incident front passes PT1 before
+# travelling to the leak and the PT1 delta_t is unaffected by which one closes.
+[sensors]
+PT1 = 0.210                     # 0.210 m upstream of the PAV (was 0.0)
+PT2 = 51.959                    # (was 50.0) PT3 at the HPV is in the txt but unused
+
+[leak_locations]
+LOC1 = 65.512                   # single leak tee (lab survey 2026-09-17; was 54.0)
+
+# Valve that closes on each maneuver, m from the PAV (positive towards the HPV).
+# Only M1 uses it: a = 4 (L - pos) / T, so MAN oscillates over 104.981 m.
+[valves]
+AUT = 0.000                     # the PAV itself
+MAN = -0.790                    # manual valve, 0.790 m past the PAV
+
+[fluid]
+K = 2.19e9
+rho = 1000
+g = 9.81
+
+[data_format]
+flow_unit = kl/h                # Q column is in kl/h (= m3/h)
+flow_valid = false              # the flow meter does not measure on this rig: the
+                                # cable was disconnected on 2026-08-04 (Q0 = -0.004
+                                # kl/h) and the 2026-09-14 campaign still reads
+                                # 0.081 kl/h at a nominal 250 L/h (Miguel confirmed
+                                # it reads wrong). With it trusted, M3_Joukowsky gave a
+                                # 547.8 m mean location error. -> M3 and ratio_Q = n/a.
+
+# 5-column txt; column 3 (PT3) is skipped
+[columns]
+time = 0
+PT1 = 1
+PT2 = 2
+Q = 4                           # WARNING, campaign of 2026-08-04: the flow
+                                # cable was not connected, so this channel
+                                # holds a constant -0.004 kl/h offset in 75 of
+                                # the 90 files (AUT 250, recorded on another
+                                # day, reads 0.081 kl/h). Anything that divides
+                                # by Q0 — M3_Joukowsky and ratio_Q — is
+                                # therefore unavailable for this campaign and
+                                # comes out as n/a. The pressure-based
+                                # indicators (ratio_H, E_R/E0, zeta_leak) are
+                                # unaffected.
+
+[processing]
+hl_from = PT1                   # H_L (carga estatica na fuga) e o proprio PT1, sem
+                                # interpolar com o PT2. O tubo e uma serpentina: a
+                                # cota varia ao longo do tubo, sobe e desce a cada
+                                # volta, logo a variacao entre os dois transdutores
+                                # nao e linear -- e a LOC1 (65.512 m) esta alem do
+                                # PT2 (51.959 m), o que tornava aquilo uma
+                                # extrapolacao. A queda PT1-PT2 medida (-0.71 m a
+                                # 150 l/h, -0.95 a 250, -1.03 a 350) e ~0.6 m fixos
+                                # de cota entre os dois pontos, mais eventual desvio
+                                # de calibracao, somados ao atrito; o sinal negativo
+                                # diz que o PT2 esta a montante do PT1.
+                                # Nao muda resultados: H_L so entra no QL e o QL so
+                                # no ratio_Q, ja n/a por flow_valid = false.
+echo_pick = deepest             # coil fittings make early spurious dips; the leak echo is the
+                                # DEEPEST, which is what this now selects. Measured against
+                                # 'prominent': mean |error| 15.80 -> 9.76 m, tests within 10 m
+                                # of the leak 48 -> 61 of 72, better at every flow and every
+                                # leak size (13 tests improve, 3 worsen).
+period_from = transducer        # the period method is unreliable on this coil:
+                                # it reads 1680 m/s at 350 l/h (both maneuvers)
+                                # against a steady 1088-1099 from the PT1->PT2
+                                # time of flight over the known 50 m. T_period
+                                # sets the echo search window, so that error
+                                # would poison the location before any other
+                                # choice. Measured 2026-08-11 on the repeated
+                                # tests.
+timing = absolute               # transducer-celerity front timing: 'frac_peak' or 'absolute'
+level = 10.0                    # absolute rise (m) used when timing = absolute
+echo_min_dt = 0.015             # (s) ignore dips closer than 15 ms to the incident
+                                # front. The AUT closure rings ~6-7 ms after the
+                                # front (also in the NL, so not the leak) with a
+                                # dip deeper than the echo at ~107 ms; without
+                                # the guard 10 of 12 AUT tests located at ~4 m.
+                                # Measured 2026-09-17: no MAN test changes.
+drop_from = echo                # a queda inicial (damping_NL) so e procurada a
+                                # partir do primeiro maximo local do ensaio sem
+                                # fuga depois de o eco da fuga chegar ao PT1,
+                                # t_on + 2 (65.512 - 0.210) / a_transducer, que
+                                # nestes ensaios da 124-128 ms (o pico seguinte
+                                # esta nos 130-132). Na janela toda, a serpentina
+                                # mete um mergulho transitorio pelos 105-112 ms
+                                # que apanhava o maximo das fugas pequenas e
+                                # tornava o indicador nao monotono no calibre: a
+                                # 150 l/h o L0.5 lia 0.2609, acima do L1.5
+                                # (0.2107). Com o corte os tres caudais ficam
+                                # monotonos e so o L0.5 e o L1.0 mudam -- o L1.5
+                                # e o L2.0 ja estavam depois do eco.

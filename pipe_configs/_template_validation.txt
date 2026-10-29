@@ -1,0 +1,128 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  PIPE CONFIGURATION — TEMPLATE FOR VALIDATION WORK
+#
+#  For controlled tests on an installation where you made the leaks yourself
+#  and measured where they are: batch_analysis.py, experimental_analysis,
+#  report_location, report_indicators,
+#  report_repeatability and calibration. Those compare the
+#  estimated position against the true one and compute the error, so the leak
+#  positions MUST be declared in [leak_locations] below.
+#
+#  For an installation where the leak position is unknown, use
+#  _template_blind.txt instead: there the position is what you are looking for
+#  and the code must not be told it.
+#
+#  Copy this file, rename it (e.g. my_pipe.txt) and fill it in. Files whose
+#  name starts with '_' are ignored, so this template is never loaded.
+#
+#  Check your file with:      python validate_pipe_configs.py
+#  Use it:                    FACILITY = 'my_pipe'   (in the notebooks)
+#                             python batch_analysis.py my_pipe
+#
+#  Format: sections in [brackets], one "key = value" per line, '#' starts a
+#  comment. Sensor and leak names take letters, digits and underscore only.
+#  Every length is in metres, measured FROM THE VALVE that produces the
+#  maneuver, which is the origin of the x axis.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[pipe]
+name = my_pipe                  # unique identifier, no spaces. This is the name
+                                # you pass to configure_pipe().
+description =                   # free text, for humans
+material =                      # informative only, not used in the calculations
+
+
+[geometry]
+L = 0.0                         # total length (m)
+D = 0.0                         # internal diameter (m)
+
+# The wave celerity can be COMPUTED (below) or DECLARED. To declare a measured
+# value, add a line here:
+#     celerity = 1270.0         # (m/s)
+# A measured value should win over a computed one whenever the pipe departs
+# from the ideal case: coiled pipes, flexible joints and fittings all add
+# compliance the formula does not capture, and can push the real celerity well
+# below the theoretical one.
+
+[material]                      # used ONLY when [geometry] celerity is absent
+e = 0.001                       # wall thickness (m)
+E = 1.20e11                     # Young's modulus (Pa)   copper 1.2e11, steel 2.1e11,
+                                #                        PVC 3.0e9, HDPE 8.0e8
+poisson = 0.34                  # Poisson coefficient (-)  copper 0.34, steel 0.30, PVC 0.45
+                                # ALTERNATIVE: give 'alpha = 0.976' instead if
+                                # you already know the restraint coefficient.
+                                # Deriving alpha from poisson assumes the pipe
+                                # is anchored against longitudinal movement
+                                # along its whole length.
+
+
+# Position of each sensor (m). The FIRST entry is the reference transducer
+# (PT1): it is where the signals are read and where the leak echo is timed.
+# PT1 and PT2 together give the transducer celerity method, and the steady head
+# at the leak is interpolated between them.
+[sensors]
+PT1 = 0.0
+PT2 = 0.0
+
+
+# Position of each leak outlet you built into the rig (m). Add as many as you
+# have; the names are free (LOC1, LOC2, ...) and are what you refer to in the
+# notebooks and in the data filenames. A position beyond L is accepted but
+# warned about, since it means the leak sits past the declared pipe length.
+[leak_locations]
+LOC1 = 0.0
+LOC2 = 0.0
+
+
+[fluid]
+K = 2.19e9                      # bulk modulus (Pa) — 2.19e9 for water at ~20 C
+rho = 1000                      # density (kg/m3)
+g = 9.81                        # gravity (m/s2)
+
+
+# ── Optional sections below. Omit any of them to use the defaults shown. ─────
+
+[data_format]
+flow_unit = L/h                 # one of: L/h, kl/h, m3/h, L/s, m3/s
+flow_valid = true               # false when the flow meter is known to read wrong:
+                                # everything that divides by the steady flow Q0
+                                # (M3_Joukowsky, ratio_Q) is then reported as n/a.
+
+
+# 0-based column index of each channel in the data files. Count every column in
+# the file, including any you do not use, and point each key at the right index
+# (this is how a spare transducer channel gets skipped).
+[columns]
+time = 0
+PT1 = 1
+PT2 = 2
+Q = 3
+
+
+[processing]
+echo_pick = first               # which gradient dip is taken as the leak echo:
+                                #  "first"     — the earliest significant dip.
+                                #                Right for a straight, clean run.
+                                #  "prominent" — the deepest dip. Needed when
+                                #                fittings, bends or coiling
+                                #                produce early spurious dips
+                                #                that would be picked first.
+period_from = period            # which celerity sets the oscillation period
+                                # T = 4L/a, which in turn sets the echo search
+                                # window, the first-surge window and the cycle
+                                # length. One of:
+                                #  "period"      — from the oscillation itself (default)
+                                #  "transducer"  — from the PT1->PT2 time of flight
+                                #  "joukowsky"   — from the surge vs flow change
+                                #  "theoretical" — Korteweg
+                                # Change it when the period method proves
+                                # unreliable on your pipe: compare it against
+                                # the transducer value, which rests on a known
+                                # distance, and prefer the steadier one.
+timing = frac_peak              # how each sensor's front is timed for the
+                                # transducer celerity:
+                                #  "frac_peak" — 50% of that sensor's own rise
+                                #  "absolute"  — a fixed rise 'level' above its
+                                #                baseline; use it when the two
+                                #                sensors see different amplitudes
+level = 10.0                    # absolute rise (m), used only when timing = absolute

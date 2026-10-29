@@ -1,0 +1,53 @@
+# DECivil / LHWRE horizontal copper loop — BLIND configuration.
+#
+# Same physical pipe as CS.txt, with [leak_locations] deliberately absent: the
+# general analysis code (signal_analysis.ipynb) must not be handed the leak
+# positions, because in the field they are what one is trying to find.
+#
+# Use CS.txt for the validation work (batch_analysis, V7, V6, calibration),
+# which needs the true positions to compute errors.
+
+[pipe]
+name = CS_blind
+description = Copper straight (CS), 15 m horizontal — leak positions unknown
+material = copper
+
+[geometry]
+L = 15.0                        # total pipe length (m)
+D = 0.02                        # internal diameter (m)
+# celerity intentionally omitted: computed from [material] below (Korteweg).
+
+[material]                      # used when [geometry] celerity is absent
+e = 0.001                       # wall thickness (m)
+E = 1.20e11                     # Young's modulus (Pa), copper
+alpha = 0.976                   # pipe-restraint coefficient (-), longitudinally
+                                # anchored throughout.  ALTERNATIVE: give
+                                # poisson = 0.34 and alpha is derived from it.
+                                # -> a = 1270.731 m/s
+
+# position of each sensor from the valve (m); the FIRST entry is the reference (PT1)
+[sensors]
+PT1 = 0.245
+PT2 = 7.870
+
+# [leak_locations] omitted on purpose - see the header.
+
+[fluid]
+K = 2.19e9                      # bulk modulus (Pa), water ~20 C
+rho = 1000                      # density (kg/m3)
+g = 9.81                        # gravity (m/s2)
+
+[data_format]
+flow_unit = L/h                 # Q column unit in the txt files
+
+# 0-based column index of each channel in the data txt files
+[columns]
+time = 0
+PT1 = 1
+PT2 = 2
+Q = 3
+
+[processing]
+echo_pick = deepest             # same rule as CS and CC (was first; changed 2026-09-21)
+timing = absolute               # transducer-celerity front timing: 'frac_peak' or 'absolute'
+level = 10.0                    # absolute rise (m) used when timing = absolute

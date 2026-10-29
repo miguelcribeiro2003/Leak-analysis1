@@ -1,0 +1,82 @@
+# DECivil / LHWRE horizontal copper loop.
+# Datasets: Experimental_data_CS/ (measured) and Numerical_data_CS/ (simulated).
+
+[pipe]
+name = CS
+description = Copper straight (CS), 15 m horizontal
+material = copper
+
+[geometry]
+L = 15.0                        # total pipe length (m)
+D = 0.02                        # internal diameter (m)
+# celerity omitted on purpose: computed from [material] below (Korteweg).
+# To pin a measured value instead, add here:  celerity = <m/s>
+
+[material]                      # used ONLY when [geometry] celerity is absent
+e = 0.001                       # wall thickness (m)
+E = 1.20e11                     # Young's modulus (Pa), copper
+alpha = 0.976                   # pipe-restraint coefficient (-), pipe anchored
+                                # against longitudinal movement throughout.
+                                # ALTERNATIVE: poisson = 0.34, and alpha is
+                                # derived from it (gives 0.97629 -> 1270.683).
+                                # -> a = 1270.731 m/s
+
+# position of each sensor from the valve (m); the FIRST entry is the reference (PT1)
+[sensors]
+PT1 = 0.245
+PT2 = 7.870
+
+# position of each leak location from the valve (m)
+[leak_locations]
+LOC1 = 2.060
+LOC2 = 7.605
+LOC3 = 10.260
+
+[fluid]
+K = 2.19e9                      # bulk modulus (Pa), water ~20 C
+rho = 1000                      # density (kg/m3)
+g = 9.81                        # gravity (m/s2)
+
+[data_format]
+flow_unit = L/h                 # Q column unit in the txt files
+
+# 0-based column index of each channel in the data txt files
+[columns]
+time = 0
+PT1 = 1
+PT2 = 2
+Q = 3
+
+[processing]
+echo_pick = deepest             # the deepest dip above the prominence bar. Same rule as the
+                                # coil: on this straight pipe it is indifferent (identical to
+                                # 'first' in all 54 single-leak tests, since the edge guard
+                                # leaves one candidate in the window almost every time), so the
+                                # two facilities can share one criterion at no cost here.
+timing = absolute               # transducer-celerity front timing: 'frac_peak' or 'absolute'.
+                                # 2026-10-28: volta ao criterio antigo, a frente marcada quando
+                                # cada transdutor sobe LEVEL = 10 m acima do seu permanente, que
+                                # e o que esta escrito na tese (1524 m/s, media dos nove ensaios
+                                # sem fuga de 150 a 350 l/h). Com 'frac_peak' os mesmos ensaios
+                                # dao 1542 m/s. A dispersao entre ensaios e praticamente igual
+                                # nos dois criterios (sd 31.0 contra 30.2 m/s), e em qualquer
+                                # deles M2 continua n/a nesta conduta, por exceder o tecto
+                                # fisico. A alternativa relativa fica descrita abaixo:
+                                # cada sensor marcado a TDX_FRAC = 0.5 da SUA subida, i.e. a
+                                # meio caminho entre H0 e Hmax desse ensaio.
+                                # The fraction was swept over the 12 NL tests (AUT, 150 to
+                                # 850 l/h) and the test-to-test spread is a clean U:
+                                #   0.05 -> 88.5   0.10 -> 54.4   0.20 -> 37.3   0.30 -> 31.5
+                                #   0.40 -> 29.1   0.50 -> 29.0   0.70 -> 33.4   0.90 -> 50.5 m/s
+                                # The floor is mid-rise, where the front is steepest and a
+                                # given uncertainty in head costs the least in time - the
+                                # classic time-of-flight criterion. 0.50 is already the
+                                # TDX_FRAC default, so no code change was needed.
+level = 10.0                    # subida absoluta (m) que marca a frente, com timing = absolute
+
+# NOTE (2026-09-12): M2 currently returns n/a on this pipe. Every front-marking rule tried
+# gives 1480-1590 m/s, at or above the physical ceiling sqrt(K/rho) = 1479.9 m/s, so
+# a_transducer() rejects it. The evidence points at the sensor separation rather than the
+# criterion: the DX implied by the period celerity is a steady 6.031 +/- 0.145 m (CV 2.4%)
+# against the 7.625 m implied by PT2 = 7.870 here. PT2 is left untouched until it is measured
+# on the rig. Nothing downstream depends on M2 for this pipe (period_from = period).

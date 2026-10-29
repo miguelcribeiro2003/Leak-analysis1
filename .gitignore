@@ -1,0 +1,27 @@
+# Dados de ensaio e de simulacao: nao fazem parte deste repositorio.
+# Colocar as pastas aqui para correr os scripts; ficam de fora do git.
+Experimental_data_CS/
+Experimental_data_CC/
+Numerical_data_CS/
+Experimental_data/
+Simulated_data/
+
+# Resultados de cada analise, reescritos por batch_analysis.py / batch_simulated.py
+**/outputs/
+**/pair_single.csv
+results/
+
+# Figuras e tabelas, regeneradas pelos scripts que as desenham
+graficos*/
+*.pdf
+*.png
+*.svg
+*.docx
+*.xlsx
+
+# Ambiente
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.log
+.venv/

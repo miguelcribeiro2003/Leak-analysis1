@@ -1,0 +1,42 @@
+# Numerical model of the CS loop, one- and two-leak cases.
+# Dataset: Numerical_data_CS/ (read with analysis.load_sim).
+#
+# Differs from CS.txt in three ways, all properties of the MODEL, not of the rig:
+#   - the head is recorded at the VALVE (second-to-last column of the .dat), so the
+#     measuring section, PT1, is at 0 m and every position is a distance to it;
+#   - the leak nodes sit on the MOC grid (dx = a*dt = 1250 * 1e-4 = 0.125 m), so the
+#     positions are the nearest grid points to the real ones: LOC1 2.000, LOC2 7.625, LOC3 10.250 (Table 4.2);
+#   - the celerity is the calibrated one (Table 4.3), not the Korteweg value 1270.7 m/s.
+# One and two-leak cases share this geometry since the runs of 22/09/2026 (before
+# that, the two-leak model had LOC2 at 7.500 m and needed its own config).
+
+[pipe]
+name = CS_sim
+description = CS numerical model (one and two leaks)
+material = copper
+
+[geometry]
+L = 15.0                        # total pipe length (m)
+D = 0.02                        # internal diameter (m)
+celerity = 1250                 # calibrated celerity of the model (m/s)
+
+# position of each sensor from the valve (m); the FIRST entry is the reference (PT1)
+[sensors]
+PT1 = 0.0                       # head recorded at the valve node
+
+# position of each leak node from the valve (m)
+[leak_locations]
+LOC1 = 2.000
+LOC2 = 7.625
+LOC3 = 10.250
+
+[fluid]
+K = 2.19e9                      # bulk modulus (Pa), water ~20 C
+rho = 1000                      # density (kg/m3)
+g = 9.81                        # gravity (m/s2)
+
+[data_format]
+flow_valid = false              # the .dat files carry no flow channel
+
+[processing]
+echo_pick = deepest             # same rule as CS and CC
